@@ -30,9 +30,9 @@ futures-channel = { version = "0.3.16", features = ["alloc", "default", "futures
 futures-core = { version = "0.3.16", features = ["alloc", "default", "std"] }
 futures-io = { version = "0.3.16", features = ["default", "std"] }
 futures-sink = { version = "0.3.16", features = ["alloc", "default", "std"] }
-futures-util = { version = "0.3.16", features = ["alloc", "async-await", "async-await-macro", "channel", "default", "futures-channel", "futures-io", "futures-macro", "futures-sink", "io", "memchr", "proc-macro-hack", "proc-macro-nested", "sink", "slab", "std"] }
+futures-util = { version = "0.3.16", features = ["alloc", "async-await", "async-await-macro", "channel", "default", "futures-channel", "futures-io", "futures-macro", "futures-sink", "io", "sink", "slab", "std"] }
 getrandom = { version = "0.2.2", default-features = false, features = ["std"] }
-hyper = { version = "0.14.11", features = ["client", "default", "full", "h2", "http1", "http2", "runtime", "server", "socket2", "stream", "tcp"] }
+hyper = { version = "1.6.0", features = ["full"] }
 indexmap = { version = "1.7.0", default-features = false, features = ["std"] }
 itertools = { version = "0.10.0", features = ["default", "use_alloc", "use_std"] }
 itoa = { version = "0.4.7", features = ["default", "std"] }
@@ -46,7 +46,7 @@ plotters = { version = "0.3.0", default-features = false, features = ["area_seri
 prost = { version = "0.8.0", features = ["default", "prost-derive", "std"] }
 rand = { version = "0.8.3", features = ["alloc", "default", "getrandom", "libc", "rand_chacha", "rand_hc", "small_rng", "std", "std_rng"] }
 rand_core = { version = "0.5.1", default-features = false, features = ["alloc", "getrandom", "std"] }
-regex = { version = "1.4.3", features = ["aho-corasick", "default", "memchr", "perf", "perf-cache", "perf-dfa", "perf-inline", "perf-literal", "std", "thread_local", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
+regex = { version = "1.11.1", features = ["default", "perf", "perf-cache", "perf-dfa", "perf-inline", "perf-literal", "std", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
 regex-automata = { version = "0.1.9", features = ["default", "regex-syntax", "std"] }
 regex-syntax = { version = "0.6.23", features = ["default", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
 reqwest = { version = "0.11.2", features = ["__tls", "blocking", "default", "default-tls", "hyper-tls", "json", "native-tls-crate", "serde_json", "stream", "tokio-native-tls"] }
@@ -56,11 +56,11 @@ serde_json = { version = "1.0.64", features = ["default", "indexmap", "preserve_
 standback = { version = "0.2.15", default-features = false, features = ["std"] }
 subtle = { version = "2.4.0", default-features = false, features = ["std"] }
 tiny-keccak = { version = "2.0.2", features = ["default", "sha3"] }
-tokio = { version = "1.9.0", features = ["bytes", "default", "fs", "full", "io-std", "io-util", "libc", "macros", "memchr", "mio", "net", "num_cpus", "once_cell", "parking_lot", "process", "rt", "rt-multi-thread", "signal", "signal-hook-registry", "sync", "test-util", "time", "tokio-macros", "winapi"] }
+tokio = { version = "1.45.1", features = ["full"] }
 tokio-util = { version = "0.6.7", features = ["codec", "compat", "default", "futures-io", "io"] }
 toml = { version = "0.5.8", features = ["default"] }
 tracing = { version = "0.1.26", features = ["attributes", "default", "log", "std", "tracing-attributes"] }
-tracing-core = { version = "0.1.18", features = ["default", "lazy_static", "std"] }
+tracing-core = { version = "0.1.33", features = ["default", "std"] }
 warp = { version = "0.3.0", features = ["default", "multipart", "tls", "tokio-rustls", "tokio-tungstenite", "websocket"] }
 zeroize = { version = "1.2.0", features = ["alloc", "default", "zeroize_derive"] }
 
@@ -85,9 +85,9 @@ futures-channel = { version = "0.3.16", features = ["alloc", "default", "futures
 futures-core = { version = "0.3.16", features = ["alloc", "default", "std"] }
 futures-io = { version = "0.3.16", features = ["default", "std"] }
 futures-sink = { version = "0.3.16", features = ["alloc", "default", "std"] }
-futures-util = { version = "0.3.16", features = ["alloc", "async-await", "async-await-macro", "channel", "default", "futures-channel", "futures-io", "futures-macro", "futures-sink", "io", "memchr", "proc-macro-hack", "proc-macro-nested", "sink", "slab", "std"] }
+futures-util = { version = "0.3.16", features = ["alloc", "async-await", "async-await-macro", "channel", "default", "futures-channel", "futures-io", "futures-macro", "futures-sink", "io", "sink", "slab", "std"] }
 getrandom = { version = "0.2.2", default-features = false, features = ["std"] }
-hyper = { version = "0.14.11", features = ["client", "default", "full", "h2", "http1", "http2", "runtime", "server", "socket2", "stream", "tcp"] }
+hyper = { version = "1.6.0", features = ["full"] }
 indexmap = { version = "1.7.0", default-features = false, features = ["std"] }
 itertools = { version = "0.10.0", features = ["default", "use_alloc", "use_std"] }
 itoa = { version = "0.4.7", features = ["default", "std"] }
@@ -103,7 +103,7 @@ prost = { version = "0.8.0", features = ["default", "prost-derive", "std"] }
 quote = { version = "0.6.13", features = ["default", "proc-macro"] }
 rand = { version = "0.8.3", features = ["alloc", "default", "getrandom", "libc", "rand_chacha", "rand_hc", "small_rng", "std", "std_rng"] }
 rand_core = { version = "0.5.1", default-features = false, features = ["alloc", "getrandom", "std"] }
-regex = { version = "1.4.3", features = ["aho-corasick", "default", "memchr", "perf", "perf-cache", "perf-dfa", "perf-inline", "perf-literal", "std", "thread_local", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
+regex = { version = "1.4.3", features = ["default", "perf", "perf-cache", "perf-dfa", "perf-inline", "perf-literal", "std", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
 regex-automata = { version = "0.1.9", features = ["default", "regex-syntax", "std"] }
 regex-syntax = { version = "0.6.23", features = ["default", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
 reqwest = { version = "0.11.2", features = ["__tls", "blocking", "default", "default-tls", "hyper-tls", "json", "native-tls-crate", "serde_json", "stream", "tokio-native-tls"] }
@@ -115,11 +115,11 @@ subtle = { version = "2.4.0", default-features = false, features = ["std"] }
 syn-3575ec1268b04181 = { package = "syn", version = "0.15.44", features = ["clone-impls", "default", "derive", "extra-traits", "full", "parsing", "printing", "proc-macro", "quote", "visit"] }
 syn-dff4ba8e3ae991db = { package = "syn", version = "1.0.74", features = ["clone-impls", "default", "derive", "extra-traits", "full", "parsing", "printing", "proc-macro", "quote", "visit", "visit-mut"] }
 tiny-keccak = { version = "2.0.2", features = ["default", "sha3"] }
-tokio = { version = "1.9.0", features = ["bytes", "default", "fs", "full", "io-std", "io-util", "libc", "macros", "memchr", "mio", "net", "num_cpus", "once_cell", "parking_lot", "process", "rt", "rt-multi-thread", "signal", "signal-hook-registry", "sync", "test-util", "time", "tokio-macros", "winapi"] }
+tokio = { version = "1.45.1", features = ["full"] }
 tokio-util = { version = "0.6.7", features = ["codec", "compat", "default", "futures-io", "io"] }
 toml = { version = "0.5.8", features = ["default"] }
 tracing = { version = "0.1.26", features = ["attributes", "default", "log", "std", "tracing-attributes"] }
-tracing-core = { version = "0.1.18", features = ["default", "lazy_static", "std"] }
+tracing-core = { version = "0.1.33", features = ["default", "std"] }
 warp = { version = "0.3.0", features = ["default", "multipart", "tls", "tokio-rustls", "tokio-tungstenite", "websocket"] }
 zeroize = { version = "1.2.0", features = ["alloc", "default", "zeroize_derive"] }
 
@@ -143,9 +143,9 @@ futures-channel = { version = "0.3.16", features = ["alloc", "default", "futures
 futures-core = { version = "0.3.16", features = ["alloc", "default", "std"] }
 futures-io = { version = "0.3.16", features = ["default", "std"] }
 futures-sink = { version = "0.3.16", features = ["alloc", "default", "std"] }
-futures-util = { version = "0.3.16", features = ["alloc", "async-await", "async-await-macro", "channel", "default", "futures-channel", "futures-io", "futures-macro", "futures-sink", "io", "memchr", "proc-macro-hack", "proc-macro-nested", "sink", "slab", "std"] }
+futures-util = { version = "0.3.16", features = ["alloc", "async-await", "async-await-macro", "channel", "default", "futures-channel", "futures-io", "futures-macro", "futures-sink", "io", "sink", "slab", "std"] }
 getrandom = { version = "0.2.2", default-features = false, features = ["std"] }
-hyper = { version = "0.14.11", features = ["client", "default", "full", "h2", "http1", "http2", "runtime", "server", "socket2", "stream", "tcp"] }
+hyper = { version = "1.6.0", features = ["full"] }
 indexmap = { version = "1.7.0", default-features = false, features = ["std"] }
 itertools = { version = "0.10.0", features = ["default", "use_alloc", "use_std"] }
 itoa = { version = "0.4.7", features = ["default", "std"] }
@@ -159,7 +159,7 @@ plotters = { version = "0.3.0", default-features = false, features = ["area_seri
 prost = { version = "0.8.0", features = ["default", "prost-derive", "std"] }
 rand = { version = "0.8.3", features = ["alloc", "default", "getrandom", "libc", "rand_chacha", "rand_hc", "small_rng", "std", "std_rng"] }
 rand_core = { version = "0.5.1", default-features = false, features = ["alloc", "getrandom", "std"] }
-regex = { version = "1.4.3", features = ["aho-corasick", "default", "memchr", "perf", "perf-cache", "perf-dfa", "perf-inline", "perf-literal", "std", "thread_local", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
+regex = { version = "1.4.3", features = ["default", "perf", "perf-cache", "perf-dfa", "perf-inline", "perf-literal", "std", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
 regex-automata = { version = "0.1.9", features = ["default", "regex-syntax", "std"] }
 regex-syntax = { version = "0.6.23", features = ["default", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
 reqwest = { version = "0.11.2", features = ["__tls", "blocking", "default", "default-tls", "hyper-tls", "json", "native-tls-crate", "serde_json", "stream", "tokio-native-tls"] }
@@ -169,11 +169,11 @@ serde_json = { version = "1.0.64", features = ["default", "indexmap", "preserve_
 standback = { version = "0.2.15", default-features = false, features = ["std"] }
 subtle = { version = "2.4.0", default-features = false, features = ["std"] }
 tiny-keccak = { version = "2.0.2", features = ["default", "sha3"] }
-tokio = { version = "1.9.0", features = ["bytes", "default", "fs", "full", "io-std", "io-util", "libc", "macros", "memchr", "mio", "net", "num_cpus", "once_cell", "parking_lot", "process", "rt", "rt-multi-thread", "signal", "signal-hook-registry", "sync", "test-util", "time", "tokio-macros", "winapi"] }
+tokio = { version = "1.45.1", features = ["full"] }
 tokio-util = { version = "0.6.7", features = ["codec", "compat", "default", "futures-io", "io"] }
 toml = { version = "0.5.8", features = ["default"] }
 tracing = { version = "0.1.26", features = ["attributes", "default", "log", "std", "tracing-attributes"] }
-tracing-core = { version = "0.1.18", features = ["default", "lazy_static", "std"] }
+tracing-core = { version = "0.1.33", features = ["default", "std"] }
 warp = { version = "0.3.0", features = ["default", "multipart", "tls", "tokio-rustls", "tokio-tungstenite", "websocket"] }
 zeroize = { version = "1.2.0", features = ["alloc", "default", "zeroize_derive"] }
 
@@ -198,9 +198,9 @@ futures-channel = { version = "0.3.16", features = ["alloc", "default", "futures
 futures-core = { version = "0.3.16", features = ["alloc", "default", "std"] }
 futures-io = { version = "0.3.16", features = ["default", "std"] }
 futures-sink = { version = "0.3.16", features = ["alloc", "default", "std"] }
-futures-util = { version = "0.3.16", features = ["alloc", "async-await", "async-await-macro", "channel", "default", "futures-channel", "futures-io", "futures-macro", "futures-sink", "io", "memchr", "proc-macro-hack", "proc-macro-nested", "sink", "slab", "std"] }
+futures-util = { version = "0.3.16", features = ["alloc", "async-await", "async-await-macro", "channel", "default", "futures-channel", "futures-io", "futures-macro", "futures-sink", "io", "sink", "slab", "std"] }
 getrandom = { version = "0.2.2", default-features = false, features = ["std"] }
-hyper = { version = "0.14.11", features = ["client", "default", "full", "h2", "http1", "http2", "runtime", "server", "socket2", "stream", "tcp"] }
+hyper = { version = "1.6.0", features = ["full"] }
 indexmap = { version = "1.7.0", default-features = false, features = ["std"] }
 itertools = { version = "0.10.0", features = ["default", "use_alloc", "use_std"] }
 itoa = { version = "0.4.7", features = ["default", "std"] }
@@ -216,7 +216,7 @@ prost = { version = "0.8.0", features = ["default", "prost-derive", "std"] }
 quote = { version = "0.6.13", features = ["default", "proc-macro"] }
 rand = { version = "0.8.3", features = ["alloc", "default", "getrandom", "libc", "rand_chacha", "rand_hc", "small_rng", "std", "std_rng"] }
 rand_core = { version = "0.5.1", default-features = false, features = ["alloc", "getrandom", "std"] }
-regex = { version = "1.4.3", features = ["aho-corasick", "default", "memchr", "perf", "perf-cache", "perf-dfa", "perf-inline", "perf-literal", "std", "thread_local", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
+regex = { version = "1.4.3", features = ["default", "perf", "perf-cache", "perf-dfa", "perf-inline", "perf-literal", "std", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
 regex-automata = { version = "0.1.9", features = ["default", "regex-syntax", "std"] }
 regex-syntax = { version = "0.6.23", features = ["default", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
 reqwest = { version = "0.11.2", features = ["__tls", "blocking", "default", "default-tls", "hyper-tls", "json", "native-tls-crate", "serde_json", "stream", "tokio-native-tls"] }
@@ -228,11 +228,11 @@ subtle = { version = "2.4.0", default-features = false, features = ["std"] }
 syn-3575ec1268b04181 = { package = "syn", version = "0.15.44", features = ["clone-impls", "default", "derive", "extra-traits", "full", "parsing", "printing", "proc-macro", "quote", "visit"] }
 syn-dff4ba8e3ae991db = { package = "syn", version = "1.0.74", features = ["clone-impls", "default", "derive", "extra-traits", "full", "parsing", "printing", "proc-macro", "quote", "visit", "visit-mut"] }
 tiny-keccak = { version = "2.0.2", features = ["default", "sha3"] }
-tokio = { version = "1.9.0", features = ["bytes", "default", "fs", "full", "io-std", "io-util", "libc", "macros", "memchr", "mio", "net", "num_cpus", "once_cell", "parking_lot", "process", "rt", "rt-multi-thread", "signal", "signal-hook-registry", "sync", "test-util", "time", "tokio-macros", "winapi"] }
+tokio = { version = "1.45.1", features = ["full"] }
 tokio-util = { version = "0.6.7", features = ["codec", "compat", "default", "futures-io", "io"] }
 toml = { version = "0.5.8", features = ["default"] }
 tracing = { version = "0.1.26", features = ["attributes", "default", "log", "std", "tracing-attributes"] }
-tracing-core = { version = "0.1.18", features = ["default", "lazy_static", "std"] }
+tracing-core = { version = "0.1.33", features = ["default", "std"] }
 warp = { version = "0.3.0", features = ["default", "multipart", "tls", "tokio-rustls", "tokio-tungstenite", "websocket"] }
 zeroize = { version = "1.2.0", features = ["alloc", "default", "zeroize_derive"] }
 

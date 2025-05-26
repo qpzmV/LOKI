@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug fuzz binary directly",
+            "program": "${workspaceFolder}/src/diem_fuzz/target/debug/diem-swarm",
+            "args": [
+                "--fuzzer-node",
+                "${workspaceFolder}/src/diem_fuzz/target/debug/diem-node",
+                "--diem-node",
+                "${workspaceFolder}/src/diem_fuzz/target/debug/diem-node",
+                "-n 4 -t 1 -c ${workspaceFolder}/src/diem_fuzz/tmp"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_BACKTRACE": "1",
+                "LSAN_OPTIONS": "verbosity=1:log_threads=1"
+            },
+            "sourceLanguages": ["rust"],
+            "sourceMap": {
+                "/rustc/": "${env:HOME}/.rustup/toolchains/1.83-x86_64-apple-darwin/lib/rustlib"
+            },
+            "stopOnEntry": true
+        }
+    ]
+}
