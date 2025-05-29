@@ -1,0 +1,1042 @@
+src/diem_fuzz/language/benchmarks/README.md
+
+start_cli_swarm.sh
+
+diem_node::start(&config, None);
+
+pub fn start(config: &NodeConfig, log_file: Option<PathBuf>) {
+    let _node_handle = setup_environment(&config, logger);  // 重要
+    let term = Arc::new(AtomicBool::new(false));
+
+    // start a new thread to send fuzz packages
+    // thread::spawn(||{
+    //     crusader_fuzzer::start_fuzzer();
+    // });
+    while !term.load(Ordering::Acquire) {
+        std::thread::park();
+    }
+}
+
+
+pub fn setup_environment(node_config: &NodeConfig, logger: Option<Arc<Logger>>) -> DiemHandle {
+    let debug_if = setup_debug_interface(&node_config, logger);
+
+    let metrics_port = node_config.debug_interface.metrics_server_port;
+    let metric_host = node_config.debug_interface.address.clone();
+    thread::spawn(move || metric_server::start_server(metric_host, metrics_port, false));
+    let public_metrics_port = node_config.debug_interface.public_metrics_server_port;
+    let public_metric_host = node_config.debug_interface.address.clone();
+    thread::spawn(move || {
+        metric_server::start_server(public_metric_host, public_metrics_port, true)
+    });
+
+    let mut instant = Instant::now();
+    let (diem_db, db_rw) = DbReaderWriter::wrap(
+        DiemDB::open(
+            &node_config.storage.dir(),
+            false, /* readonly */
+            node_config.storage.prune_window,
+            node_config.storage.rocksdb_config,
+        )
+        .expect("DB should open."),
+    );
+    let _simple_storage_service = start_storage_service_with_db(&node_config, Arc::clone(&diem_db));
+    let backup_service = start_backup_service(
+        node_config.storage.backup_service_address,
+        Arc::clone(&diem_db),
+    );
+
+    let genesis_waypoint = node_config.base.waypoint.genesis_waypoint();
+    // if there's genesis txn and waypoint, commit it if the result matches.
+    if let Some(genesis) = get_genesis_txn(&node_config) {
+        maybe_bootstrap::<DiemVM>(&db_rw, genesis, genesis_waypoint)
+            .expect("Db-bootstrapper should not fail.");
+    } else {
+        info!("Genesis txn not provided, it's fine if you don't expect to apply it otherwise please double check config");
+    }
+
+    debug!(
+        "Storage service started in {} ms",
+        instant.elapsed().as_millis()
+    );
+
+    instant = Instant::now();
+    let chunk_executor = setup_chunk_executor(db_rw.clone());
+    debug!(
+        "ChunkExecutor setup in {} ms",
+        instant.elapsed().as_millis()
+    );
+    let chain_id = fetch_chain_id(&db_rw);
+    let mut network_runtimes = vec![];
+    let mut state_sync_network_handles = vec![];
+    let mut mempool_network_handles = vec![];
+    let mut consensus_network_handles = None;
+    let mut reconfig_subscriptions = vec![];
+
+    let (mempool_reconfig_subscription, mempool_reconfig_events) =
+        gen_mempool_reconfig_subscription();
+    reconfig_subscriptions.push(mempool_reconfig_subscription);
+    // consensus has to subscribe to ALL on-chain configs
+    let (consensus_reconfig_subscription, consensus_reconfig_events) =
+        gen_consensus_reconfig_subscription();
+    if node_config.base.role.is_validator() {
+        reconfig_subscriptions.push(consensus_reconfig_subscription);
+    }
+
+    // Gather all network configs into a single vector.
+    let mut network_configs: Vec<&NetworkConfig> = node_config.full_node_networks.iter().collect();
+    if let Some(network_config) = node_config.validator_network.as_ref() {
+        network_configs.push(network_config);
+    }
+
+    // Instantiate every network and collect the requisite endpoints for state_sync, mempool, and consensus.
+    for (idx, network_config) in network_configs.into_iter().enumerate() {
+        debug!("Creating runtime for {}", network_config.network_id);
+        let runtime = Builder::new_multi_thread()
+            .thread_name(format!("network-{}", network_config.network_id))
+            .enable_all()
+            .build()
+            .expect("Failed to start runtime. Won't be able to start networking.");
+
+        // Entering here gives us a runtime to instantiate all the pieces of the builder
+        let _enter = runtime.enter();
+
+        // Perform common instantiation steps
+        let mut network_builder = NetworkBuilder::create(
+            chain_id,
+            node_config.base.role,
+            network_config,
+            TimeService::real(),
+        );  // 重要 ‼️
+        let network_id = network_config.network_id.clone();
+
+        // Create the endpoints to connect the Network to State Sync.
+        let (state_sync_sender, state_sync_events) =
+            network_builder.add_protocol_handler(state_sync::network::network_endpoint_config());
+        state_sync_network_handles.push((
+            NodeNetworkId::new(network_id.clone(), idx),
+            state_sync_sender,
+            state_sync_events,
+        ));
+
+        // Create the endpoints to connect the Network to mempool.
+        let (mempool_sender, mempool_events) = network_builder.add_protocol_handler(
+            diem_mempool::network::network_endpoint_config(MEMPOOL_NETWORK_CHANNEL_BUFFER_SIZE),
+        );
+        mempool_network_handles.push((
+            NodeNetworkId::new(network_id.clone(), idx),
+            mempool_sender,
+            mempool_events,
+        ));
+
+        // Perform steps relevant specifically to Validator networks.
+        if network_id.is_validator_network() {
+            // A valid config is allowed to have at most one ValidatorNetwork
+            // TODO:  `expect_none` would be perfect here, once it is stable.
+            if consensus_network_handles.is_some() {
+                panic!("There can be at most one validator network!");
+            }
+
+            consensus_network_handles = Some(
+                network_builder
+                    .add_protocol_handler(consensus::network_interface::network_endpoint_config()),
+            );
+        }
+
+        reconfig_subscriptions.append(network_builder.reconfig_subscriptions());
+
+        let network_context = network_builder.network_context();
+        network_builder.build(runtime.handle().clone());
+        network_builder.start();
+        debug!("Network built for network context: {}", network_context);
+        network_runtimes.push(runtime);
+    }
+
+    // TODO set up on-chain discovery network based on UpstreamConfig.fallback_network
+    // and pass network handles to mempool/state sync
+
+    // for state sync to send requests to mempool
+    let (state_sync_to_mempool_sender, state_sync_requests) =
+        channel(INTRA_NODE_CHANNEL_BUFFER_SIZE);
+    let state_sync_bootstrapper = StateSyncBootstrapper::bootstrap(
+        state_sync_network_handles,
+        state_sync_to_mempool_sender,
+        Arc::clone(&db_rw.reader),
+        chunk_executor,
+        node_config,
+        genesis_waypoint,
+        reconfig_subscriptions,
+    );
+    let (mp_client_sender, mp_client_events) = channel(AC_SMP_CHANNEL_BUFFER_SIZE);
+
+    let rpc_runtime = bootstrap_rpc(&node_config, chain_id, diem_db.clone(), mp_client_sender);
+
+    let mut consensus_runtime = None;
+    let (consensus_to_mempool_sender, consensus_requests) = channel(INTRA_NODE_CHANNEL_BUFFER_SIZE);
+
+    instant = Instant::now();
+    let mempool = diem_mempool::bootstrap(
+        node_config,
+        Arc::clone(&db_rw.reader),
+        mempool_network_handles,
+        mp_client_events,
+        consensus_requests,
+        state_sync_requests,
+        mempool_reconfig_events,
+    );
+    debug!("Mempool started in {} ms", instant.elapsed().as_millis());
+
+    // StateSync should be instantiated and started before Consensus to avoid a cyclic dependency:
+    // network provider -> consensus -> state synchronizer -> network provider.  This has resulted
+    // in a deadlock as observed in GitHub issue #749.
+    if let Some((consensus_network_sender, consensus_network_events)) = consensus_network_handles {
+        let state_sync_client =
+            state_sync_bootstrapper.create_client(node_config.state_sync.client_commit_timeout_ms);
+
+        // Make sure that state synchronizer is caught up at least to its waypoint
+        // (in case it's present). There is no sense to start consensus prior to that.
+        // TODO: Note that we need the networking layer to be able to discover & connect to the
+        // peers with potentially outdated network identity public keys.
+        debug!("Wait until state sync is initialized");
+        block_on(state_sync_client.wait_until_initialized())
+            .expect("State sync initialization failure");
+        debug!("State sync initialization complete.");
+
+        // Initialize and start consensus.
+        instant = Instant::now();
+        consensus_runtime = Some(start_consensus(
+            node_config,
+            consensus_network_sender,
+            consensus_network_events,
+            state_sync_client,
+            consensus_to_mempool_sender,
+            diem_db,
+            consensus_reconfig_events,
+        ));
+        debug!("Consensus started in {} ms", instant.elapsed().as_millis());
+    }
+
+    // Spawn a task which will periodically dump some interesting state
+    debug_if
+        .runtime()
+        .handle()
+        .spawn(periodic_state_dump(node_config.to_owned(), db_rw));
+
+    DiemHandle {
+        _network_runtimes: network_runtimes,
+        _rpc: rpc_runtime,
+        _mempool: mempool,
+        _state_sync_bootstrapper: state_sync_bootstrapper,
+        _consensus_runtime: consensus_runtime,
+        _debug: debug_if,
+        _backup: backup_service,
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+    /// Create a new NetworkBuilder based on the provided configuration.
+    pub fn create(
+        chain_id: ChainId,
+        role: RoleType,
+        config: &NetworkConfig,
+        time_service: TimeService,
+    ) -> NetworkBuilder {
+        let peer_id = config.peer_id();
+        let identity_key = config.identity_key();
+        let pubkey = identity_key.public_key();
+
+        let authentication_mode = if config.mutual_authentication {
+            AuthenticationMode::Mutual(identity_key)
+        } else {
+            AuthenticationMode::MaybeMutual(identity_key)
+        };
+
+        let network_context = Arc::new(NetworkContext::new(
+            role,
+            config.network_id.clone(),
+            peer_id,
+        ));
+
+        let trusted_peers = Arc::new(RwLock::new(HashMap::new()));
+
+        let mut network_builder = NetworkBuilder::new(
+            chain_id,
+            trusted_peers.clone(),
+            network_context,
+            time_service,
+            config.listen_address.clone(),
+            authentication_mode,
+            config.max_frame_size,
+            config.enable_proxy_protocol,
+            config.network_channel_size,
+            config.max_concurrent_network_reqs,
+            config.max_inbound_connections,
+            config.inbound_rate_limit_config,
+            config.outbound_rate_limit_config,
+        );
+
+        network_builder.add_connection_monitoring(
+            config.ping_interval_ms,
+            config.ping_timeout_ms,
+            config.ping_failures_tolerated,
+        );
+
+        // Always add a connectivity manager to keep track of known peers
+        let seeds = merge_seeds(config);
+
+        network_builder.add_connectivity_manager(
+            seeds,
+            trusted_peers,
+            config.max_outbound_connections,
+            config.connection_backoff_base,
+            config.max_connection_delay_ms,
+            config.connectivity_check_interval_ms,
+            config.network_channel_size,
+            config.mutual_authentication,
+        );
+
+        network_builder.discovery_listeners = Some(Vec::new());
+        for discovery_method in config.discovery_methods() {
+            network_builder.add_discovery_change_listener(
+                &discovery_method,
+                pubkey,
+                config.encryptor(),
+            );
+        }
+
+        // Ensure there are no duplicate source types
+        let set: HashSet<_> = network_builder
+            .discovery_listeners
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|listener| listener.discovery_source())
+            .collect();
+        assert_eq!(
+            set.len(),
+            network_builder.discovery_listeners.as_ref().unwrap().len()
+        );
+
+        network_builder
+    }
+
+// ----------------------------------------------------------------------------------------------------
+    /// Return a new NetworkBuilder initialized with default configuration values.
+    // TODO:  Remove `pub`.  NetworkBuilder should only be created thorugh `::create()`
+    pub fn new(
+        chain_id: ChainId,
+        trusted_peers: Arc<RwLock<PeerSet>>,
+        network_context: Arc<NetworkContext>,
+        time_service: TimeService,
+        listen_address: NetworkAddress,
+        authentication_mode: AuthenticationMode,
+        max_frame_size: usize,
+        enable_proxy_protocol: bool,
+        network_channel_size: usize,
+        max_concurrent_network_reqs: usize,
+        inbound_connection_limit: usize,
+        inbound_rate_limit_config: Option<RateLimitConfig>,
+        outbound_rate_limit_config: Option<RateLimitConfig>,
+    ) -> Self {
+        // A network cannot exist without a PeerManager
+        // TODO:  construct this in create and pass it to new() as a parameter. The complication is manual construction of NetworkBuilder in various tests.
+        let peer_manager_builder = PeerManagerBuilder::create(
+            chain_id,
+            network_context.clone(),
+            time_service.clone(),
+            listen_address,
+            trusted_peers,
+            authentication_mode,
+            network_channel_size,
+            max_concurrent_network_reqs,
+            max_frame_size,
+            enable_proxy_protocol,
+            inbound_connection_limit,
+            inbound_rate_limit_config,
+            outbound_rate_limit_config,
+        );
+
+        NetworkBuilder {
+            state: State::CREATED,
+            executor: None,
+            time_service,
+            network_context,
+            discovery_listeners: None,
+            connectivity_manager_builder: None,
+            health_checker_builder: None,
+            peer_manager_builder,
+            reconfig_subscriptions: vec![],
+        }
+    }
+
+
+// ----------------------------------------------------------------------------------------------------
+
+impl PeerManagerBuilder {
+    pub fn create(
+        chain_id: ChainId,
+        network_context: Arc<NetworkContext>,
+        time_service: TimeService,
+        // TODO(philiphayes): better support multiple listening addrs
+        listen_address: NetworkAddress,
+        trusted_peers: Arc<RwLock<PeerSet>>,
+        authentication_mode: AuthenticationMode,
+        channel_size: usize,
+        max_concurrent_network_reqs: usize,
+        max_frame_size: usize,
+        enable_proxy_protocol: bool,
+        inbound_connection_limit: usize,
+        inbound_rate_limit_config: Option<RateLimitConfig>,
+        outbound_rate_limit_config: Option<RateLimitConfig>,
+    ) -> Self {
+        // Setup channel to send requests to peer manager.
+        let (pm_reqs_tx, pm_reqs_rx) = diem_channel::new(
+            QueueStyle::FIFO,
+            channel_size,
+            Some(&counters::PENDING_PEER_MANAGER_REQUESTS),
+        );
+        // Setup channel to send connection requests to peer manager.
+        let (connection_reqs_tx, connection_reqs_rx) =
+            diem_channel::new(QueueStyle::FIFO, channel_size, None);
+
+        Self {
+            network_context,
+            time_service,
+            transport_context: Some(TransportContext::new(
+                chain_id,
+                Vec::new(),
+                Vec::new(),
+                authentication_mode,
+                trusted_peers.clone(),
+                enable_proxy_protocol,
+            )),
+            peer_manager_context: Some(PeerManagerContext::new(
+                pm_reqs_tx,
+                pm_reqs_rx,
+                connection_reqs_tx,
+                connection_reqs_rx,
+                trusted_peers,
+                HashMap::new(),
+                Vec::new(),
+                max_concurrent_network_reqs,
+                channel_size,
+                max_frame_size,
+                inbound_connection_limit,
+                inbound_rate_limit_config,
+                outbound_rate_limit_config,
+            )),
+            peer_manager: None,
+            listen_address,
+        }
+    }
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+    
+    /// Given a transport build and launch PeerManager.
+    /// Return the actual NetworkAddress over which this peer is listening.
+    fn build_with_transport<TTransport, TSocket>(
+        &mut self,
+        transport: TTransport,
+        executor: &Handle,
+    ) -> PeerManager<TTransport, TSocket>
+    where
+        TTransport: Transport<Output = Connection<TSocket>> + Send + 'static,
+        TSocket: transport::TSocket,
+    {
+        let pm_context = self
+            .peer_manager_context
+            .take()
+            .expect("PeerManager can only be built once");
+        let inbound_rate_limiters = token_bucket_rate_limiter(
+            &self.network_context,
+            "inbound",
+            pm_context.inbound_rate_limit_config,
+        );
+        let outbound_rate_limiters = token_bucket_rate_limiter(
+            &self.network_context,
+            "outbound",
+            pm_context.outbound_rate_limit_config,
+        );
+        let peer_mgr = PeerManager::new(
+            executor.clone(),
+            self.time_service.clone(),
+            transport,
+            self.network_context.clone(),
+            // TODO(philiphayes): peer manager should take `Vec<NetworkAddress>`
+            // (which could be empty, like in client use case)
+            self.listen_address.clone(),
+            pm_context.trusted_peers,
+            pm_context.pm_reqs_rx,
+            pm_context.connection_reqs_rx,
+            pm_context.upstream_handlers,
+            pm_context.connection_event_handlers,
+            pm_context.max_concurrent_network_reqs,
+            pm_context.channel_size,
+            pm_context.max_frame_size,
+            pm_context.inbound_connection_limit,
+            inbound_rate_limiters,
+            outbound_rate_limiters,
+        );
+
+        // PeerManager constructor appends a public key to the listen_address.
+        self.listen_address = peer_mgr.listen_addr().clone();
+
+        peer_mgr
+    }
+
+
+// ----------------------------------------------------------------------------------------------------
+    
+    pub fn update_connected_peers_metrics(&self) {
+        let total = self.active_peers.len();
+        let inbound = self
+            .active_peers
+            .iter()
+            .filter(|(_, (metadata, _))| metadata.origin == ConnectionOrigin::Inbound)
+            .count();
+        let outbound = total.saturating_sub(inbound);
+
+        counters::connections(&self.network_context, ConnectionOrigin::Inbound).set(inbound as i64);
+        counters::connections(&self.network_context, ConnectionOrigin::Outbound)
+            .set(outbound as i64);
+    }
+
+
+// ----------------------------------------------------------------------------------------------------
+        fn handle_connection_event(&mut self, event: TransportNotification<TSocket>) {
+        trace!(
+            NetworkSchema::new(&self.network_context),
+            transport_notification = format!("{:?}", event),
+            "{} TransportNotification::{:?}",
+            self.network_context,
+            event
+        );
+        self.sample_connected_peers();
+        match event {
+            TransportNotification::NewConnection(mut conn) => {
+                match conn.metadata.origin {
+                    ConnectionOrigin::Outbound => {
+                        // TODO: This is right now a hack around having to feed trusted peers deeper in the outbound path.  Inbound ones are assigned at Noise handshake time.
+                        conn.metadata.role = self
+                            .trusted_peers
+                            .read()
+                            .get(&conn.metadata.remote_peer_id)
+                            .map_or(PeerRole::Unknown, |auth_context| auth_context.role);
+
+                        if conn.metadata.role == PeerRole::Unknown {
+                            warn!(
+                                NetworkSchema::new(&self.network_context)
+                                    .connection_metadata_with_address(&conn.metadata),
+                                "{} Outbound connection made with unknown peer role: {}",
+                                self.network_context,
+                                conn.metadata
+                            )
+                        }
+                    }
+                    ConnectionOrigin::Inbound => {
+                        // Everything below here is meant for unknown peers only, role comes from
+                        // Noise handshake and if it's not `Unknown` it is trusted
+                        if conn.metadata.role == PeerRole::Unknown {
+                            // TODO: Keep track of somewhere else to not take this hit in case of DDoS
+                            // Count unknown inbound connections
+                            let unknown_inbound_conns = self
+                                .active_peers
+                                .iter()
+                                .filter(|(peer_id, (metadata, _))| {
+                                    metadata.origin == ConnectionOrigin::Inbound
+                                        && self
+                                            .trusted_peers
+                                            .read()
+                                            .get(peer_id)
+                                            .map_or(true, |peer| peer.role == PeerRole::Unknown)
+                                })
+                                .count();
+
+                            // Reject excessive inbound connections made by unknown peers
+                            // We control outbound connections with Connectivity manager before we even send them
+                            // and we must allow connections that already exist to pass through tie breaking.
+                            if !self
+                                .active_peers
+                                .contains_key(&conn.metadata.remote_peer_id)
+                                && unknown_inbound_conns + 1 > self.inbound_connection_limit
+                            {
+                                info!(
+                                    NetworkSchema::new(&self.network_context)
+                                        .connection_metadata_with_address(&conn.metadata),
+                                    "{} Connection rejected due to connection limit: {}",
+                                    self.network_context,
+                                    conn.metadata
+                                );
+                                counters::connections_rejected(
+                                    &self.network_context,
+                                    conn.metadata.origin,
+                                )
+                                .inc();
+                                self.disconnect(conn);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // Add new peer, updating counters and all
+                info!(
+                    NetworkSchema::new(&self.network_context)
+                        .connection_metadata_with_address(&conn.metadata),
+                    "{} New connection established: {}", self.network_context, conn.metadata
+                );
+                self.add_peer(conn);
+                self.update_connected_peers_metrics();
+            }
+            TransportNotification::Disconnected(lost_conn_metadata, reason) => {
+                // See: https://github.com/diem/diem/issues/3128#issuecomment-605351504 for
+                // detailed reasoning on `Disconnected` events should be handled correctly.
+                info!(
+                    NetworkSchema::new(&self.network_context)
+                        .connection_metadata_with_address(&lost_conn_metadata),
+                    disconnection_reason = reason,
+                    "{} Connection {} closed due to {}",
+                    self.network_context,
+                    lost_conn_metadata,
+                    reason
+                );
+                let peer_id = lost_conn_metadata.remote_peer_id;
+                // If the active connection with the peer is lost, remove it from `active_peers`.
+                if let Entry::Occupied(entry) = self.active_peers.entry(peer_id) {
+                    let (conn_metadata, _) = entry.get();
+                    if conn_metadata.connection_id == lost_conn_metadata.connection_id {
+                        // We lost an active connection.
+                        entry.remove();
+                    }
+                }
+                self.update_connected_peers_metrics();
+
+                // If the connection was explicitly closed by an upstream client, send an ACK.
+                if let Some(oneshot_tx) = self
+                    .outstanding_disconnect_requests
+                    .remove(&lost_conn_metadata.connection_id)
+                {
+                    // The client explicitly closed the connection and it should be notified.
+                    if let Err(send_err) = oneshot_tx.send(Ok(())) {
+                        info!(
+                            NetworkSchema::new(&self.network_context),
+                            error = ?send_err,
+                            "{} Failed to notify upstream client of closed connection for peer {}: {:?}",
+                            self.network_context,
+                            peer_id,
+                            send_err
+                        );
+                    }
+                }
+
+                let ip_addr = lost_conn_metadata
+                    .addr
+                    .find_ip_addr()
+                    .unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
+
+                // Notify upstream if there's still no active connection. This might be redundant,
+                // but does not affect correctness.
+                if !self.active_peers.contains_key(&peer_id) {
+                    let notif = ConnectionNotification::LostPeer(
+                        lost_conn_metadata,
+                        self.network_context.clone(),
+                        reason,
+                    );
+                    self.send_conn_notification(peer_id, notif);
+                }
+
+                // Garbage collect unused rate limit buckets
+                self.inbound_rate_limiters.try_garbage_collect_key(&ip_addr);
+                self.outbound_rate_limiters
+                    .try_garbage_collect_key(&ip_addr);
+            }
+        }
+    }
+
+
+
+// ----------------------------------------------------------------------------------------------------
+    /// Start listening on the set address and return a future which runs PeerManager
+    pub async fn start(mut self) {
+        // Start listening for connections.
+        info!(
+            NetworkSchema::new(&self.network_context),
+            "Start listening for incoming connections on {}", self.listen_addr
+        );
+        self.start_connection_listener();
+        loop {
+            ::futures::select! {
+                connection_event = self.transport_notifs_rx.select_next_some() => {
+                    self.handle_connection_event(connection_event);
+                }
+                request = self.requests_rx.select_next_some() => {
+                    self.handle_request(request).await;
+                }
+                connection_request = self.connection_reqs_rx.select_next_some() => {
+                    self.handle_connection_request(connection_request).await;
+                }
+                complete => {
+                    break;
+                }
+            }
+        }
+
+        warn!(
+            NetworkSchema::new(&self.network_context),
+            "PeerManager actor terminated"
+        );
+    }
+
+
+
+// ----------------------------------------------------------------------------------------------------
+    fn add_peer(&mut self, connection: Connection<TSocket>) {
+        let conn_meta = connection.metadata.clone();
+        let peer_id = conn_meta.remote_peer_id;
+
+        // Make a disconnect if you've connected to yourself
+        if self.network_context.peer_id() == peer_id {
+            debug_assert!(false, "Self dials shouldn't happen");
+            warn!(
+                NetworkSchema::new(&self.network_context)
+                    .connection_metadata_with_address(&conn_meta),
+                "Received self-dial, disconnecting it"
+            );
+            self.disconnect(connection);
+            return;
+        }
+
+        let mut send_new_peer_notification = true;
+
+        // Check for and handle simultaneous dialing
+        if let Entry::Occupied(active_entry) = self.active_peers.entry(peer_id) {
+            let (curr_conn_metadata, _) = active_entry.get();
+            if Self::simultaneous_dial_tie_breaking(
+                self.network_context.peer_id(),
+                peer_id,
+                curr_conn_metadata.origin,
+                conn_meta.origin,
+            ) {
+                let (_, peer_handle) = active_entry.remove();
+                // Drop the existing connection and replace it with the new connection
+                drop(peer_handle);
+                info!(
+                    NetworkSchema::new(&self.network_context).remote_peer(&peer_id),
+                    "{} Closing existing connection with Peer {} to mitigate simultaneous dial",
+                    self.network_context,
+                    peer_id.short_str()
+                );
+                send_new_peer_notification = false;
+            } else {
+                info!(
+                    NetworkSchema::new(&self.network_context).remote_peer(&peer_id),
+                    "{} Closing incoming connection with Peer {} to mitigate simultaneous dial",
+                    self.network_context,
+                    peer_id.short_str()
+                );
+                // Drop the new connection and keep the one already stored in active_peers
+                self.disconnect(connection);
+                return;
+            }
+        }
+
+        let ip_addr = connection
+            .metadata
+            .addr
+            .find_ip_addr()
+            .unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
+        let inbound_rate_limiter = self.inbound_rate_limiters.bucket(ip_addr);
+        let outbound_rate_limiter = self.outbound_rate_limiters.bucket(ip_addr);
+
+        // TODO: Add label for peer.
+        let (peer_reqs_tx, peer_reqs_rx) = diem_channel::new(
+            QueueStyle::FIFO,
+            self.channel_size,
+            Some(&counters::PENDING_NETWORK_REQUESTS),
+        );
+        // TODO: Add label for peer.
+        let (peer_notifs_tx, peer_notifs_rx) = diem_channel::new(
+            QueueStyle::FIFO,
+            self.channel_size,
+            Some(&counters::PENDING_NETWORK_NOTIFICATIONS),
+        );
+
+        // Initialize a new Peer actor for this connection.
+        let peer = Peer::new(
+            self.network_context.clone(),
+            self.executor.clone(),
+            self.time_service.clone(),
+            connection,
+            self.transport_notifs_tx.clone(),
+            peer_reqs_rx,
+            peer_notifs_tx,
+            Duration::from_millis(constants::INBOUND_RPC_TIMEOUT_MS),
+            constants::MAX_CONCURRENT_INBOUND_RPCS,
+            constants::MAX_CONCURRENT_OUTBOUND_RPCS,
+            self.max_frame_size,
+            Some(inbound_rate_limiter),
+            Some(outbound_rate_limiter),
+        );
+        self.executor.spawn(peer.start());
+
+        // Start background task to handle events (RPCs and DirectSend messages) received from
+        // peer.
+        self.spawn_peer_network_events_handler(peer_id, peer_notifs_rx);
+        // Save PeerRequest sender to `active_peers`.
+        self.active_peers
+            .insert(peer_id, (conn_meta.clone(), peer_reqs_tx));
+        // Send NewPeer notification to connection event handlers.
+        if send_new_peer_notification {
+            let notif = ConnectionNotification::NewPeer(conn_meta, self.network_context.clone());
+            self.send_conn_notification(peer_id, notif);
+        }
+    }
+
+
+// ----------------------------------------------------------------------------------------------------
+    fn handle_connection_event(&mut self, event: TransportNotification<TSocket>) {
+        trace!(
+            NetworkSchema::new(&self.network_context),
+            transport_notification = format!("{:?}", event),
+            "{} TransportNotification::{:?}",
+            self.network_context,
+            event
+        );
+        self.sample_connected_peers();
+        match event {
+            TransportNotification::NewConnection(mut conn) => {
+                match conn.metadata.origin {
+                    ConnectionOrigin::Outbound => {
+                        // TODO: This is right now a hack around having to feed trusted peers deeper in the outbound path.  Inbound ones are assigned at Noise handshake time.
+                        conn.metadata.role = self
+                            .trusted_peers
+                            .read()
+                            .get(&conn.metadata.remote_peer_id)
+                            .map_or(PeerRole::Unknown, |auth_context| auth_context.role);
+
+                        if conn.metadata.role == PeerRole::Unknown {
+                            warn!(
+                                NetworkSchema::new(&self.network_context)
+                                    .connection_metadata_with_address(&conn.metadata),
+                                "{} Outbound connection made with unknown peer role: {}",
+                                self.network_context,
+                                conn.metadata
+                            )
+                        }
+                    }
+                    ConnectionOrigin::Inbound => {
+                        // Everything below here is meant for unknown peers only, role comes from
+                        // Noise handshake and if it's not `Unknown` it is trusted
+                        if conn.metadata.role == PeerRole::Unknown {
+                            // TODO: Keep track of somewhere else to not take this hit in case of DDoS
+                            // Count unknown inbound connections
+                            let unknown_inbound_conns = self
+                                .active_peers
+                                .iter()
+                                .filter(|(peer_id, (metadata, _))| {
+                                    metadata.origin == ConnectionOrigin::Inbound
+                                        && self
+                                            .trusted_peers
+                                            .read()
+                                            .get(peer_id)
+                                            .map_or(true, |peer| peer.role == PeerRole::Unknown)
+                                })
+                                .count();
+
+                            // Reject excessive inbound connections made by unknown peers
+                            // We control outbound connections with Connectivity manager before we even send them
+                            // and we must allow connections that already exist to pass through tie breaking.
+                            if !self
+                                .active_peers
+                                .contains_key(&conn.metadata.remote_peer_id)
+                                && unknown_inbound_conns + 1 > self.inbound_connection_limit
+                            {
+                                info!(
+                                    NetworkSchema::new(&self.network_context)
+                                        .connection_metadata_with_address(&conn.metadata),
+                                    "{} Connection rejected due to connection limit: {}",
+                                    self.network_context,
+                                    conn.metadata
+                                );
+                                counters::connections_rejected(
+                                    &self.network_context,
+                                    conn.metadata.origin,
+                                )
+                                .inc();
+                                self.disconnect(conn);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // Add new peer, updating counters and all
+                info!(
+                    NetworkSchema::new(&self.network_context)
+                        .connection_metadata_with_address(&conn.metadata),
+                    "{} New connection established: {}", self.network_context, conn.metadata
+                );
+                self.add_peer(conn);
+                self.update_connected_peers_metrics();
+            }
+            TransportNotification::Disconnected(lost_conn_metadata, reason) => {
+                // See: https://github.com/diem/diem/issues/3128#issuecomment-605351504 for
+                // detailed reasoning on `Disconnected` events should be handled correctly.
+                info!(
+                    NetworkSchema::new(&self.network_context)
+                        .connection_metadata_with_address(&lost_conn_metadata),
+                    disconnection_reason = reason,
+                    "{} Connection {} closed due to {}",
+                    self.network_context,
+                    lost_conn_metadata,
+                    reason
+                );
+                let peer_id = lost_conn_metadata.remote_peer_id;
+                // If the active connection with the peer is lost, remove it from `active_peers`.
+                if let Entry::Occupied(entry) = self.active_peers.entry(peer_id) {
+                    let (conn_metadata, _) = entry.get();
+                    if conn_metadata.connection_id == lost_conn_metadata.connection_id {
+                        // We lost an active connection.
+                        entry.remove();
+                    }
+                }
+                self.update_connected_peers_metrics();
+
+                // If the connection was explicitly closed by an upstream client, send an ACK.
+                if let Some(oneshot_tx) = self
+                    .outstanding_disconnect_requests
+                    .remove(&lost_conn_metadata.connection_id)
+                {
+                    // The client explicitly closed the connection and it should be notified.
+                    if let Err(send_err) = oneshot_tx.send(Ok(())) {
+                        info!(
+                            NetworkSchema::new(&self.network_context),
+                            error = ?send_err,
+                            "{} Failed to notify upstream client of closed connection for peer {}: {:?}",
+                            self.network_context,
+                            peer_id,
+                            send_err
+                        );
+                    }
+                }
+
+                let ip_addr = lost_conn_metadata
+                    .addr
+                    .find_ip_addr()
+                    .unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
+
+                // Notify upstream if there's still no active connection. This might be redundant,
+                // but does not affect correctness.
+                if !self.active_peers.contains_key(&peer_id) {
+                    let notif = ConnectionNotification::LostPeer(
+                        lost_conn_metadata,
+                        self.network_context.clone(),
+                        reason,
+                    );
+                    self.send_conn_notification(peer_id, notif);
+                }
+
+                // Garbage collect unused rate limit buckets
+                self.inbound_rate_limiters.try_garbage_collect_key(&ip_addr);
+                self.outbound_rate_limiters
+                    .try_garbage_collect_key(&ip_addr);
+            }
+        }
+    }
+
+// ----------------------------------------------------------------------------------------------------
+    /// Start listening on the set address and return a future which runs PeerManager
+    pub async fn start(mut self) {
+        // Start listening for connections.
+        info!(
+            NetworkSchema::new(&self.network_context),
+            "Start listening for incoming connections on {}", self.listen_addr
+        );
+        self.start_connection_listener();
+        loop {
+            ::futures::select! {
+                connection_event = self.transport_notifs_rx.select_next_some() => {
+                    self.handle_connection_event(connection_event);
+                }
+                request = self.requests_rx.select_next_some() => {
+                    self.handle_request(request).await;
+                }
+                connection_request = self.connection_reqs_rx.select_next_some() => {
+                    self.handle_connection_request(connection_request).await;
+                }
+                complete => {
+                    break;
+                }
+            }
+        }
+
+        warn!(
+            NetworkSchema::new(&self.network_context),
+            "PeerManager actor terminated"
+        );
+    }
+
+// ----------------------------------------------------------------------------------------------------
+src/diem_fuzz/network/README.md
+
+
+// ----------------------------------------------------------------------------------------------------
+    /// Given a transport build and launch PeerManager.
+    /// Return the actual NetworkAddress over which this peer is listening.
+    fn build_with_transport<TTransport, TSocket>(
+        &mut self,
+        transport: TTransport,
+        executor: &Handle,
+    ) -> PeerManager<TTransport, TSocket>
+    where
+        TTransport: Transport<Output = Connection<TSocket>> + Send + 'static,
+        TSocket: transport::TSocket,
+    {
+        let pm_context = self
+            .peer_manager_context
+            .take()
+            .expect("PeerManager can only be built once");
+        let inbound_rate_limiters = token_bucket_rate_limiter(
+            &self.network_context,
+            "inbound",
+            pm_context.inbound_rate_limit_config,
+        );
+        let outbound_rate_limiters = token_bucket_rate_limiter(
+            &self.network_context,
+            "outbound",
+            pm_context.outbound_rate_limit_config,
+        );
+        let peer_mgr = PeerManager::new(
+            executor.clone(),
+            self.time_service.clone(),
+            transport,
+            self.network_context.clone(),
+            // TODO(philiphayes): peer manager should take `Vec<NetworkAddress>`
+            // (which could be empty, like in client use case)
+            self.listen_address.clone(),
+            pm_context.trusted_peers,
+            pm_context.pm_reqs_rx,
+            pm_context.connection_reqs_rx,
+            pm_context.upstream_handlers,
+            pm_context.connection_event_handlers,
+            pm_context.max_concurrent_network_reqs,
+            pm_context.channel_size,
+            pm_context.max_frame_size,
+            pm_context.inbound_connection_limit,
+            inbound_rate_limiters,
+            outbound_rate_limiters,
+        );
+
+        // PeerManager constructor appends a public key to the listen_address.
+        self.listen_address = peer_mgr.listen_addr().clone();
+
+        peer_mgr
+    }
+
+// ----------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------

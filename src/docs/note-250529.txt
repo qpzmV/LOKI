@@ -1,0 +1,322 @@
+我是手动访问 node metrics, 得到的response如下，讲解这两百多个字段是什么意思
+{
+  "diem_rocksdb_properties{cf_name=event_by_key,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_schemadb_put_bytes{cf_name=quorum_certificate}": "1",
+  "diem_network_connection_upgrade_time_seconds{direction=outbound,network_id=Validator,peer_id=f145133e,role_type=validator,state=failed}": "6",
+  "diem_storage_other_timers_seconds{name=save_transactions_commit}": "1",
+  "diem_rocksdb_properties{cf_name=transaction_by_account,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_rocksdb_properties{cf_name=ledger_counters,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_safety_rules_state{field=epoch}": "1",
+  "diem_schemadb_put_bytes{cf_name=transaction}": "1",
+  "diem_secure_net_events{method=write,mode=client,result=query,service=storage}": "1",
+  "diem_rocksdb_properties{cf_name=jellyfish_merkle_node,property_name=diem_rocksdb_all_memtables_size_bytes}": "1050624",
+  "diem_consensus_last_committed_version{}": "1",
+  "diem_rocksdb_properties{cf_name=event,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_schemadb_batch_commit_bytes{db_name=consensus}": "3",
+  "diem_rocksdb_properties{cf_name=event_accumulator,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_rocksdb_properties{cf_name=ledger_counters,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_secure_net_events{method=connect,mode=server,result=query,service=safety-rules}": "1",
+  "diem_network_pending_peer_manager_dial_requests{}": "0",
+  "diem_storage_api_latency_seconds{api_name=get_state_proof_with_ledger_info,result=Ok}": "1",
+  "diem_rocksdb_properties{cf_name=default,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_rocksdb_properties{cf_name=ledger_counters,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_secure_net_events{method=connect,mode=client,result=success,service=safety-rules}": "1",
+  "diem_consensus_pending_round_timeouts{}": "0",
+  "diem_core_mempool_gc_event_count{type=system_ttl}": "1",
+  "diem_committed_votes_in_window{}": "0",
+  "diem_consensus_qc_rounds_count{}": "1",
+  "diem_rocksdb_properties{cf_name=event,property_name=diem_rocksdb_all_memtables_size_bytes}": "1050624",
+  "diem_rocksdb_properties{cf_name=event,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_by_account,property_name=diem_rocksdb_all_memtables_size_bytes}": "2048",
+  "diem_storage_deletes{cf_name=single_entry}": "2",
+  "diem_network_key_mismatch{network_id=Validator,peer_id=f145133e,role_type=validator}": "0",
+  "diem_core_mempool_index_size{index=system_ttl}": "0",
+  "diem_jellyfish_internal_encoded_bytes{}": "477",
+  "diem_rocksdb_properties{cf_name=transaction_info,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_schemadb_get_bytes{cf_name=single_entry}": "2",
+  "diem_schemadb_iter_latency_seconds{cf_name=block}": "1",
+  "diem_rocksdb_properties{cf_name=transaction,property_name=diem_rocksdb_all_memtables_size_bytes}": "1050624",
+  "diem_storage_other_timers_seconds{name=update_rocksdb_properties}": "2",
+  "diem_jellyfish_leaf_encoded_bytes{}": "69089",
+  "diem_safety_rules_latency{field=consensus_state,source=internal}": "2",
+  "diem_rocksdb_properties{cf_name=event_by_key,property_name=diem_rocksdb_all_memtables_size_bytes}": "2048",
+  "diem_storage_api_latency_seconds{api_name=get_state_proof,result=Ok}": "1",
+  "diem_rocksdb_properties{cf_name=event_by_key,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_by_account,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_by_account,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_rocksdb_properties{cf_name=event_by_version,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "consensus_gauge{op=safety_rules_running}": "0",
+  "diem_schemadb_get_latency_seconds{cf_name=transaction_accumulator}": "4",
+  "diem_storage_ledger{type=new_state_nodes}": "15",
+  "diem_network_peer_connected{network_id=Validator,peer_id=f145133e,remote_peer_id=652f2741,role_type=validator}": "0",
+  "diem_storage_next_block_epoch{}": "1",
+  "diem_network_pending_connection_handler_notifications{}": "0",
+  "diem_schemadb_put_bytes{cf_name=event_by_key}": "15",
+  "diem_storage_api_latency_seconds{api_name=get_latest_tree_state,result=Ok}": "1",
+  "diem_storage_ledger{type=stale_state_leaves}": "0",
+  "diem_core_mempool_index_size{index=priority}": "0",
+  "diem_rocksdb_properties{cf_name=event_by_version,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_rocksdb_properties{cf_name=event,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_storage_committed_txns{}": "1",
+  "diem_rocksdb_properties{cf_name=transaction,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_schemadb_put_bytes{cf_name=transaction_accumulator}": "1",
+  "diem_safety_rules_queries{method=consensus_state,result=request}": "2",
+  "consensus_gauge{op=main_loop_running}": "1",
+  "diem_consensus_num_blocks_in_tree{}": "1",
+  "diem_executor_commit_blocks_seconds{}": "1",
+  "diem_secure_net_events{method=write,mode=server,result=success,service=storage}": "1",
+  "diem_storage_ledger{type=events_created}": "15",
+  "diem_rocksdb_properties{cf_name=event_by_version,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_safety_rules_latency{field=safety_data,source=get}": "1",
+  "diem_schemadb_batch_commit_latency_seconds{db_name=diemdb}": "1",
+  "diem_rocksdb_properties{cf_name=jellyfish_merkle_node,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_committed_proposals_in_window{}": "0",
+  "diem_schemadb_iter_latency_seconds{cf_name=default}": "2",
+  "diem_executor_save_transactions_seconds{}": "1",
+  "diem_storage_pruner_least_readable_state_version{}": "0",
+  "consensus_duration{op=main_loop}": "0",
+  "simple_onchain_discovery_event_processing_loop_busy_duration_s{}": "1",
+  "diem_rocksdb_properties{cf_name=stale_node_index,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_schemadb_get_latency_seconds{cf_name=jellyfish_merkle_node}": "20",
+  "diem_schemadb_iter_bytes{cf_name=transaction_info}": "9",
+  "diem_safety_rules_latency{field=waypoint,source=get}": "5",
+  "diem_rocksdb_properties{cf_name=transaction_by_account,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_rocksdb_properties{cf_name=stale_node_index,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_rocksdb_properties{cf_name=jellyfish_merkle_node,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_consensus_block_tracing{stage=qc_added}": "1",
+  "diem_storage_api_latency_seconds{api_name=get_latest_transaction_info_option,result=Ok}": "4",
+  "consensus_duration{op=safety_rules}": "2",
+  "diem_consensus_timeout_count{}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_accumulator,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_storage_ledger{type=new_state_leaves}": "12",
+  "diem_storage_latest_transaction_version{}": "0",
+  "diem_safety_rules_latency{field=consensus_state,source=external}": "1",
+  "diem_secure_net_events{method=read,mode=server,result=success,service=storage}": "1",
+  "diem_secure_net_events{method=write,mode=server,result=query,service=storage}": "1",
+  "diem_state_sync_multicast_level{}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_accumulator,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=event_accumulator,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_safety_rules_latency{field=owner_account,source=get}": "3",
+  "diem_schemadb_get_bytes{cf_name=jellyfish_merkle_node}": "20",
+  "diem_rocksdb_properties{cf_name=stale_node_index,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_schemadb_get_latency_seconds{cf_name=single_entry}": "2",
+  "diem_rocksdb_properties{cf_name=event_accumulator,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_struct_log_processed_count{}": "221",
+  "diem_schemadb_batch_commit_latency_seconds{db_name=consensus}": "3",
+  "diem_secure_net_events{method=read,mode=server,result=query,service=execution}": "1",
+  "diem_safety_rules_state{field=last_voted_round}": "0",
+  "diem_simple_onchain_discovery_counts{metric=new_nodes,network_id=Validator,peer_id=f145133e,role_type=validator}": "4",
+  "diem_safety_rules_latency{field=initialize,source=internal}": "1",
+  "diem_secure_net_events{method=connect,mode=client,result=query,service=safety-rules}": "1",
+  "diem_schemadb_put_bytes{cf_name=ledger_counters}": "1",
+  "diem_schemadb_put_bytes{cf_name=epoch_by_version}": "1",
+  "diem_schemadb_iter_latency_seconds{cf_name=transaction_info}": "10",
+  "diem_storage_api_latency_seconds{api_name=get_latest_ledger_info,result=Ok}": "1",
+  "diem_rocksdb_properties{cf_name=jellyfish_merkle_node,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_info,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=jellyfish_merkle_node,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_rocksdb_properties{cf_name=epoch_by_version,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_accumulator,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_rocksdb_properties{cf_name=transaction,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_vm_system_transactions_executed{}": "1",
+  "diem_rocksdb_properties{cf_name=event_accumulator,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_consensus_round_timeout_s{}": "100000",
+  "diem_secure_net_events{method=connect,mode=server,result=query,service=execution}": "1",
+  "diem_secure_net_events{method=read,mode=client,result=success,service=safety-rules}": "2",
+  "diem_storage_api_latency_seconds{api_name=get_latest_state_root,result=Ok}": "1",
+  "diem_rocksdb_properties{cf_name=epoch_by_version,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_accumulator,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "consensus_gauge{op=sync_only}": "0",
+  "diem_mempool_bounded_executor_spawn_latency{stage=spawn,task=reconfig}": "1",
+  "diem_rocksdb_properties{cf_name=ledger_counters,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_rocksdb_properties{cf_name=default,property_name=diem_rocksdb_all_memtables_size_bytes}": "2048",
+  "diem_rocksdb_properties{cf_name=default,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_safety_rules_latency{field=waypoint,source=set}": "1",
+  "diem_rocksdb_properties{cf_name=stale_node_index,property_name=diem_rocksdb_all_memtables_size_bytes}": "2048",
+  "diem_executor_vm_execute_block_seconds{}": "1",
+  "diem_rocksdb_properties{cf_name=epoch_by_version,property_name=diem_rocksdb_all_memtables_size_bytes}": "2048",
+  "diem_safety_rules_queries{method=initialize,result=success}": "1",
+  "diem_rocksdb_properties{cf_name=event_accumulator,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_network_peer_connected{network_id=Validator,peer_id=f145133e,remote_peer_id=a270d1fe,role_type=validator}": "0",
+  "diem_schemadb_put_bytes{cf_name=event}": "15",
+  "diem_secure_net_events{method=read,mode=server,result=success,service=safety-rules}": "2",
+  "diem_secure_net_events{method=read,mode=server,result=query,service=safety-rules}": "3",
+  "diem_safety_rules_latency{field=execution,source=get}": "1",
+  "diem_metrics{type=families_over_1000}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_info,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_secure_net_events{method=connect,mode=server,result=success,service=safety-rules}": "1",
+  "diem_rocksdb_properties{cf_name=epoch_by_version,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_rocksdb_properties{cf_name=event_by_key,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_secure_net_events{method=write,mode=server,result=query,service=safety-rules}": "2",
+  "diem_core_mempool_index_size{index=timeline}": "0",
+  "diem_secure_net_events{method=read,mode=server,result=query,service=storage}": "2",
+  "diem_secure_net_events{method=write,mode=client,result=query,service=safety-rules}": "2",
+  "diem_executor_execute_block_seconds{}": "1",
+  "diem_safety_rules_queries{method=initialize,result=request}": "1",
+  "diem_secure_net_events{method=read,mode=client,result=query,service=safety-rules}": "2",
+  "diem_metrics{type=total}": "4331",
+  "diem_secure_net_events{method=read,mode=client,result=success,service=storage}": "1",
+  "diem_rocksdb_properties{cf_name=event,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=stale_node_index,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_accumulator,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_vm_num_txns_per_block{}": "1",
+  "diem_storage_ledger_version{}": "0",
+  "diem_rocksdb_properties{cf_name=epoch_by_version,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_accumulator,property_name=diem_rocksdb_all_memtables_size_bytes}": "2048",
+  "diem_schemadb_put_bytes{cf_name=default}": "1",
+  "diem_rocksdb_properties{cf_name=transaction,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_storage_prune_window{}": "1000000",
+  "diem_rocksdb_properties{cf_name=transaction,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_mempool_main_loop{}": "1",
+  "diem_safety_rules_latency{field=initialize,source=external}": "1",
+  "diem_rocksdb_properties{cf_name=transaction_info,property_name=diem_rocksdb_all_memtables_size_bytes}": "2048",
+  "diem_rocksdb_properties{cf_name=event_accumulator,property_name=diem_rocksdb_all_memtables_size_bytes}": "1050624",
+  "diem_safety_rules_latency{field=safety_data,source=set}": "1",
+  "diem_rocksdb_properties{cf_name=ledger_counters,property_name=diem_rocksdb_all_memtables_size_bytes}": "2048",
+  "diem_rocksdb_properties{cf_name=epoch_by_version,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=jellyfish_merkle_node,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_rocksdb_properties{cf_name=ledger_counters,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_schemadb_put_bytes{cf_name=transaction_info}": "1",
+  "diem_schemadb_iter_latency_seconds{cf_name=stale_node_index}": "1",
+  "diem_safety_rules_state{field=preferred_round}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_info,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_rocksdb_properties{cf_name=event_by_key,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_schemadb_batch_commit_bytes{db_name=diemdb}": "1",
+  "diem_state_sync_main_loop{}": "181",
+  "diem_secure_net_events{method=write,mode=server,result=success,service=safety-rules}": "2",
+  "diem_consensus_current_epoch_validators{}": "4",
+  "diem_secure_net_events{method=connect,mode=client,result=query,service=storage}": "1",
+  "diem_rocksdb_properties{cf_name=stale_node_index,property_name=diem_rocksdb_block_cache_usage_bytes}": "87",
+  "diem_rocksdb_properties{cf_name=transaction_by_account,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_secure_net_events{method=read,mode=client,result=query,service=storage}": "1",
+  "diem_consensus_epoch{}": "1",
+  "diem_rocksdb_properties{cf_name=default,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_secure_net_events{method=connect,mode=server,result=query,service=storage}": "1",
+  "diem_consensus_timeout_rounds_count{}": "0",
+  "diem_schemadb_put_bytes{cf_name=jellyfish_merkle_node}": "15",
+  "diem_schemadb_put_bytes{cf_name=event_by_version}": "15",
+  "diem_network_pending_connection_upgrades{direction=outbound,network_id=Validator,peer_id=f145133e,role_type=validator}": "0",
+  "diem_core_mempool_index_size{index=expiration}": "0",
+  "diem_storage_api_latency_seconds{api_name=get_startup_info,result=Ok}": "4",
+  "diem_rocksdb_properties{cf_name=event_by_version,property_name=diem_rocksdb_all_memtables_size_bytes}": "2048",
+  "diem_secure_net_events{method=connect,mode=client,result=success,service=storage}": "1",
+  "diem_storage_api_latency_seconds{api_name=save_transactions,result=Ok}": "1",
+  "diem_core_mempool_index_size{index=parking_lot}": "0",
+  "diem_schemadb_iter_latency_seconds{cf_name=quorum_certificate}": "1",
+  "diem_rocksdb_properties{cf_name=event_by_version,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_rocksdb_properties{cf_name=event_by_key,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_storage_ledger{type=stale_state_nodes}": "0",
+  "diem_rocksdb_properties{cf_name=default,property_name=diem_rocksdb_num_running_flushes}": "0",
+  "diem_consensus_current_round{}": "1",
+  "diem_schemadb_put_bytes{cf_name=event_accumulator}": "26",
+  "diem_consensus_pending_self_messages{}": "0",
+  "diem_mempool_upstream_network{}": "0",
+  "diem_rocksdb_properties{cf_name=transaction_info,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=event,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_schemadb_iter_bytes{cf_name=default}": "1",
+  "diem_rocksdb_properties{cf_name=event_by_version,property_name=diem_rocksdb_live_sst_files_size_bytes}": "0",
+  "diem_secure_net_events{method=write,mode=client,result=success,service=storage}": "1",
+  "diem_storage_api_latency_seconds{api_name=get_account_state_with_proof_by_version,result=Ok}": "9",
+  "diem_secure_net_events{method=write,mode=client,result=success,service=safety-rules}": "2",
+  "diem_safety_rules_queries{method=consensus_state,result=success}": "2",
+  "diem_struct_log_count{}": "221",
+  "diem_secure_net_events{method=connect,mode=server,result=success,service=storage}": "1",
+  "diem_consensus_last_committed_round{}": "0",
+  "diem_executor_transactions_saved{}": "1",
+  "diem_network_pending_connectivity_manager_requests{}": "0",
+  "diem_rocksdb_properties{cf_name=transaction,property_name=diem_rocksdb_cf_size_bytes}": "0",
+  "diem_rocksdb_properties{cf_name=default,property_name=diem_rocksdb_num_running_compactions}": "0",
+  "diem_schemadb_iter_bytes{cf_name=epoch_by_version}": "1",
+  "diem_network_peer_connected{network_id=Validator,peer_id=f145133e,remote_peer_id=705193b6,role_type=validator}": "0",
+  "diem_schemadb_get_bytes{cf_name=transaction_accumulator}": "4",
+  "diem_schemadb_iter_latency_seconds{cf_name=epoch_by_version}": "1"
+}
+
+---
+你手动访问节点指标 (Node Metrics) 得到的这个 JSON 格式的响应，是 Diem 区块链节点内部状态和性能数据的快照。这些字段通常遵循 Prometheus 导出格式（metric_name{label=value, ...}），表示了节点不同组件在某个时间点的工作情况和资源使用。
+
+让我来详细解释这些字段的含义和它们所代表的类别：
+
+**通用指标命名规则：**
+
+* **`diem_` 前缀**: 几乎所有指标都以 `diem_` 开头，表明它们是 Diem 节点特有的指标。
+* **组件名**: 紧随 `diem_` 之后通常是所属组件的名称，例如 `rocksdb` (存储), `network` (网络), `consensus` (共识), `storage` (存储服务), `schemadb` (模式数据库), `executor` (执行器), `safety_rules` (安全规则)。
+* **操作/属性名**: 指标的核心含义，例如 `properties` (属性), `put_bytes` (写入字节), `connection_upgrade_time_seconds` (连接升级时间), `latency_seconds` (延迟时间), `num_running_compactions` (正在运行的压缩数量), `last_committed_version` (最后提交的版本)。
+* **`{label=value, ...}` (标签)**: 大括号内是指标的“标签”，用于提供更细粒度的分类和上下文。例如，`cf_name=event_by_key` 表示指标与 RocksDB 中的某个特定列族 (`cf_name` 是 Column Family name 的缩写) 相关；`network_id=Validator` 表示是验证器网络的指标；`result=success` 或 `result=Ok` 表示操作的结果。
+
+### 常见的指标类别和示例解释：
+
+1.  **RocksDB 存储指标 (`diem_rocksdb_properties`, `diem_rocksdb_cf_size_bytes` 等):**
+    * **含义**: RocksDB 是 Diem 节点用来持久化存储区块链数据的底层键值数据库。这些指标反映了 RocksDB 的内部状态、性能和资源使用。
+    * **示例**:
+        * `diem_rocksdb_properties{cf_name=event_by_key,property_name=diem_rocksdb_cf_size_bytes}`: `event_by_key` 列族在 RocksDB 中的总大小（字节）。值“0”表示该列族目前没有数据或非常小。
+        * `diem_rocksdb_properties{cf_name=transaction_by_account,property_name=diem_rocksdb_block_cache_usage_bytes}`: `transaction_by_account` 列族的 RocksDB 块缓存的使用量（字节）。
+        * `diem_rocksdb_properties{cf_name=jellyfish_merkle_node,property_name=diem_rocksdb_all_memtables_size_bytes}`: `jellyfish_merkle_node` 列族所有内存表（写入缓冲区）的总大小（字节）。
+        * `diem_rocksdb_properties{cf_name=ledger_counters,property_name=diem_rocksdb_num_running_compactions}`: `ledger_counters` 列族当前正在运行的 RocksDB 压缩（compaction）操作的数量。
+        * `diem_rocksdb_properties{cf_name=event,property_name=diem_rocksdb_live_sst_files_size_bytes}`: `event` 列族中活动的 SST 文件（不可变数据文件）的总大小（字节）。
+
+2.  **SchemaDB 操作指标 (`diem_schemadb_put_bytes`, `diem_schemadb_get_latency_seconds` 等):**
+    * **含义**: SchemaDB 是 Diem 在 RocksDB 之上抽象出来的一个数据库访问层，它定义了数据模式（schemas）。这些指标跟踪通过 SchemaDB 对底层存储的操作。
+    * **示例**:
+        * `diem_schemadb_put_bytes{cf_name=quorum_certificate}`: `quorum_certificate` 列族通过 SchemaDB 写入的字节数。
+        * `diem_schemadb_batch_commit_bytes{db_name=consensus}`: `consensus` 数据库中批量提交的字节数。
+        * `diem_schemadb_get_latency_seconds{cf_name=transaction_accumulator}`: 从 `transaction_accumulator` 列族获取数据时的延迟（秒）。
+
+3.  **网络指标 (`diem_network_connection_upgrade_time_seconds`, `diem_network_peer_connected` 等):**
+    * **含义**: 跟踪节点与其他节点建立和维护网络连接的状态和性能。
+    * **示例**:
+        * `diem_network_connection_upgrade_time_seconds{direction=outbound,network_id=Validator,peer_id=f145133e,role_type=validator,state=failed}`: 验证器网络中，`f145133e` 对等体向外连接升级失败所花费的时间（秒）。
+        * `diem_network_pending_peer_manager_dial_requests{}`: 等待中的对等体管理器拨号请求数量。
+        * `diem_network_peer_connected{network_id=Validator,peer_id=f145133e,remote_peer_id=652f2741,role_type=validator}`: 验证器网络中，`f145133e` 节点与 `652f2741` 对等体之间的连接状态（0 表示断开，1 表示连接）。
+
+4.  **存储服务 API 延迟 (`diem_storage_api_latency_seconds`):**
+    * **含义**: 测量存储服务（Storage Service）提供给上层组件的各种 API 调用延迟。
+    * **示例**:
+        * `diem_storage_api_latency_seconds{api_name=get_state_proof_with_ledger_info,result=Ok}`: 调用 `get_state_proof_with_ledger_info` API 成功（`Ok`）的延迟（秒）。
+        * `diem_storage_api_latency_seconds{api_name=save_transactions,result=Ok}`: 调用 `save_transactions` API 成功时的延迟。
+
+5.  **共识协议指标 (`diem_consensus_last_committed_version`, `diem_consensus_epoch` 等):**
+    * **含义**: 反映共识模块的运行状态和进度。
+    * **示例**:
+        * `diem_consensus_last_committed_version{}`: 共识模块最后提交的账本版本。
+        * `diem_consensus_epoch{}`: 当前共识轮次所属的纪元 (Epoch)。
+        * `diem_consensus_current_round{}`: 当前共识的轮次 (Round)。
+        * `diem_consensus_timeout_count{}`: 发生的超时次数。
+        * `diem_consensus_num_blocks_in_tree{}`: 共识模块内存中块树的块数量。
+
+6.  **安全规则指标 (`diem_safety_rules_state`, `diem_safety_rules_latency` 等):**
+    * **含义**: 跟踪安全规则模块的状态和操作。安全规则负责验证投票和提案，防止双重签名等恶意行为。
+    * **示例**:
+        * `diem_safety_rules_state{field=epoch}`: 安全规则模块当前所在的纪元。
+        * `diem_safety_rules_queries{method=consensus_state,result=request}`: 对安全规则的 `consensus_state` 方法的请求次数。
+        * `diem_safety_rules_latency{field=waypoint,source=get}`: 获取 waypoint 的延迟（秒）。
+
+7.  **执行器指标 (`diem_executor_commit_blocks_seconds`, `diem_executor_vm_execute_block_seconds` 等):**
+    * **含义**: 测量交易执行和块提交的性能。
+    * **示例**:
+        * `diem_executor_commit_blocks_seconds{}`: 提交区块所花费的时间（秒）。
+        * `diem_executor_vm_execute_block_seconds{}`: 虚拟机执行区块所花费的时间（秒）。
+
+8.  **内存池指标 (`diem_core_mempool_index_size`, `diem_mempool_main_loop` 等):**
+    * **含义**: 跟踪内存池（Mempool）中待处理交易的状态。
+    * **示例**:
+        * `diem_core_mempool_index_size{index=priority}`: 内存池中按优先级索引的交易数量。
+        * `diem_mempool_main_loop{}`: 内存池主循环的运行次数或状态。
+
+9.  **其他通用指标**:
+    * `diem_struct_log_processed_count{}`: 处理的结构化日志条目数量。
+    * `diem_metrics{type=total}`: 所有指标的总计数（可能不是所有指标的简单加和，而是特定计数）。
+
+**如何理解这些指标：**
+
+* **计数器 (Counter)**: 随着时间推移单调递增的指标，例如 `diem_schemadb_put_bytes` (写入的总字节数), `diem_vm_system_transactions_executed` (执行的系统交易总数)。
+* **仪表盘 (Gauge)**: 可以任意上下浮动的指标，表示某个时间点的瞬时值，例如 `diem_rocksdb_num_running_compactions` (当前正在进行的压缩数量), `diem_network_pending_peer_manager_dial_requests` (待处理请求数量)。
+* **直方图/摘要 (Histogram/Summary)**: 测量事件持续时间或大小的分布，通常会导出为 `_sum`, `_count`, `_bucket` 等后缀的指标（这个 JSON 中直接提供了简单的数值，可能是经过聚合的）。例如 `diem_storage_api_latency_seconds` 可能是平均延迟或最近一次延迟。
+
+通过分析这些指标，你可以：
+* **监控节点健康**: 检查崩溃计数、RPC 失败、连接状态等。
+* **诊断性能瓶颈**: 查看高延迟的 API 调用、RocksDB 压缩和刷写活动、CPU 或内存使用情况。
+* **理解共识状态**: 跟踪纪元、轮次、提交版本，了解共识进程的进度和健康。
+* **分析网络行为**: 监控连接、消息发送/接收、错误率。
+
+这份指标输出提供了对 Diem 节点内部运行状况的非常详细的洞察。
