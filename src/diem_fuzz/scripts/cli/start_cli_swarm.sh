@@ -37,4 +37,5 @@ echo "Building and running swarm in $RELEASE mode with the following flags: $FLA
 
 # cargo build -p diem-node $FLAGS
 cargo build -p cli $FLAGS
-cargo run -p diem-swarm -- -s --fuzzer-node /data/fuchen/diem/target/debug/diem-node --diem-node /data/diem/target/debug/diem-node --cli-path /data/fuchen/diem/target/debug/cli -n 4 -t 0 -c /data/new_LOKI_with_cli "$@"
+cargo run -p diem-swarm -- -s --fuzzer-node /Users/edy/workspace/osp/LOKI/src/diem_fuzz/target/debug/diem-node --diem-node /Users/edy/workspace/osp/LOKI/src/diem_fuzz/target/debug/diem-node --cli-path /Users/edy/workspace/osp/LOKI/src/diem_fuzz/target/debug/cli -n 4 -t 0 -c /Users/edy/workspace/osp/LOKI/src/diem_fuzz/tmp "$@"
+

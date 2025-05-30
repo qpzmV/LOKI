@@ -60,10 +60,11 @@ impl NodeDebugClient {
     pub fn get_node_metrics(&self) -> Result<HashMap<String, i64>> {
         let mut url = self.url.clone();
         url.set_path("metrics");
-        let response = self.client.get(url).send()?;
+        let response = self.client.get(url.clone()).send()?;
 
+        println!("get_node_metrics(url) = {}", url.clone());
         if !response.status().is_success() {
-            anyhow::bail!("Error querying metrics: {}", response.status());
+            anyhow::bail!("Error querying metrics {}: {}", url, response.status());
         }
 
         response

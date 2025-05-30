@@ -248,22 +248,55 @@ impl DB {
         DB::open_cf_as_secondary(db_opts, primary_path, secondary_path, name, column_families)
     }
 
+    // fn open_cf(
+    //     db_opts: &rocksdb::Options,
+    //     path: impl AsRef<Path>,
+    //     name: &'static str,
+    //     column_families: Vec<ColumnFamilyName>,
+    // ) -> Result<DB> {
+    //     let inner = rocksdb::DB::open_cf_descriptors(
+    //         db_opts,
+    //         path,
+    //         column_families.iter().map(|cf_name| {
+    //             let mut cf_opts = rocksdb::Options::default();
+    //             cf_opts.set_compression_type(rocksdb::DBCompressionType::Lz4);
+    //             rocksdb::ColumnFamilyDescriptor::new((*cf_name).to_string(), cf_opts)
+    //         }),
+    //     )?;
+    //     Ok(Self::log_construct(name, column_families, inner))
+    // }
+
     fn open_cf(
         db_opts: &rocksdb::Options,
         path: impl AsRef<Path>,
         name: &'static str,
         column_families: Vec<ColumnFamilyName>,
-    ) -> Result<DB> {
-        let inner = rocksdb::DB::open_cf_descriptors(
+    ) -> Result<DB> { // 函数的返回类型依然是 Result，因为调用者可能仍想处理失败情况
+        let open_result = rocksdb::DB::open_cf_descriptors(
             db_opts,
             path,
             column_families.iter().map(|cf_name| {
                 let mut cf_opts = rocksdb::Options::default();
-                cf_opts.set_compression_type(rocksdb::DBCompressionType::Lz4);
+                // 注意：如果 rocksdb::DBCompressionType::Lz4 不可用，可能需要替换或移除
+                // cf_opts.set_compression_type(rocksdb::DBCompressionType::Lz4);
                 rocksdb::ColumnFamilyDescriptor::new((*cf_name).to_string(), cf_opts)
             }),
-        )?;
-        Ok(Self::log_construct(name, column_families, inner))
+        ); // 不再使用 ?
+    
+        match open_result {
+            Ok(inner_db) => {
+                // 成功打开数据库
+                println!("数据库 '{}' 成功打开！Inner DB 值: {:?}", name, inner_db);
+                Ok(DB::log_construct(name, column_families, inner_db))
+            },
+            Err(e) => {
+                // 数据库打开失败
+                eprintln!("错误：无法打开数据库 '{}'：{}", name, e);
+                // 这里我们选择返回错误，因为函数签名要求返回 Result。
+                // 如果你希望在失败时仍然继续，则需要调整函数签名和后续逻辑。
+                Err(e.into()) // 将 rocksdb::Error 转换为 anyhow::Error
+            }
+        }
     }
 
     fn open_cf_readonly(

@@ -1036,7 +1036,18 @@ src/diem_fuzz/network/README.md
     }
 
 // ----------------------------------------------------------------------------------------------------
-
+forge, smoke-test, fabric, .github, src/diem_fuzz/mempool, error.rs, launch*, *.lock,
 // ----------------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------------
+
+./target/debug/diem-swarm --fuzzer-node  ./target/debug/diem-node --diem-node ./target/debug/diem-node -n 4 -t 1 -c /Users/edy/workspace/osp/LOKI/src/diem_fuzz/tmp
+
+cargo run -p diem-swarm -- -s --fuzzer-node /Users/edy/workspace/osp/LOKI/src/diem_fuzz/target/debug/diem-node --diem-node /data/diem/target/debug/diem-node --cli-path /Users/edy/workspace/osp/LOKI/src/diem_fuzz/target/debug/cli -n 4 -t 0 -c /Users/edy/workspace/osp/LOKI/src/diem_fuzz/tmp
+
+./target/debug/diem-node -f ./tmp/1/node.yaml
+
+ps aux | grep diem-node | grep -v grep | awk '{print $2}' | xargs kill -9
+
+ps aux | grep diem-swarm | grep -v grep | awk '{print $2}' | xargs kill -9
+
