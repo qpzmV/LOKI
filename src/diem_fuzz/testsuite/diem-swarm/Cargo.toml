@@ -23,4 +23,3 @@ diem-genesis-tool = {path = "../../config/management/genesis", features = ["test
 diem-temppath = { path = "../../common/temppath" }
 diem-types = { path = "../../types" }
 diem-workspace-hack = { path = "../../common/workspace-hack" }
-consensus = { path = "../../consensus" }

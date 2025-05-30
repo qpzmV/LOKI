@@ -28,10 +28,8 @@ use std::{
     path::{Path, PathBuf},
     process::{Child, Command},
     str::FromStr,
-    thread
 };
 use thiserror::Error;
-// use consensus::crusader_fuzzer;
 
 #[derive(Debug)]
 struct Process(Child);
@@ -138,15 +136,7 @@ impl DiemNode {
     }
 
     pub fn start(&mut self) -> Result<()> {
-
-        // let log_file = File::open(&self.log_path)?;
-        let mut log_file = std::fs::OpenOptions::new()
-        .write(true)
-        .append(true)
-        .open(&self.log_path)
-        .unwrap();
-
-        println!("the log path is {}",self.log_path.to_str().unwrap());
+        let log_file = File::open(&self.log_path)?;
         // Start node process
         let mut node_command = Command::new(self.diem_node_bin_path.as_path());
         node_command.arg("-f").arg(self.config_path.as_path());
@@ -163,7 +153,6 @@ impl DiemNode {
                 self.diem_node_bin_path.as_path()
             )
         })?;
-        
         self.process = Some(Process(process));
 
         Ok(())
@@ -601,7 +590,6 @@ impl DiemSwarm {
                 )
                 .unwrap();
                 self.nodes.insert(node_id.clone(), node);
-                // nodes_set.insert(node_id,node);
             }
             else if index < num_fuzzer_nodes+num_cov_nodes{
                  // Use index as node id.
@@ -615,8 +603,6 @@ impl DiemSwarm {
                 )
                 .unwrap();
                 self.nodes.insert(node_id.clone(), node);
-                // nodes_set.insert(node_id,node);
-
             }
             else{
                 // Use index as node id.
@@ -630,7 +616,6 @@ impl DiemSwarm {
                 )
                 .unwrap();
                 self.nodes.insert(node_id, node);
-                // nodes_set.insert(node_id,node);
             }
         }
         self.wait_for_startup()?;
@@ -653,9 +638,6 @@ impl DiemSwarm {
             self.wait_for_connectivity(expected_peers)?;
         }
         println!("{} Successfully launched Swarm", self.log_header());
-        // thread::spawn(||{
-        //     random_stop_nodes(&mut self.nodes,num_fuzzer_nodes);
-        // });
         Ok(())
     }
 
@@ -663,7 +645,7 @@ impl DiemSwarm {
         let num_attempts = 60;
 
         for i in 0..num_attempts {
-            println!("{} : {}", self.log_header(), i);
+            println!("{} Wait for connectivity attempt: {}", self.log_header(), i);
 
             if self
                 .nodes
@@ -913,5 +895,3 @@ impl Drop for DiemSwarm {
         }
     }
 }
-
-

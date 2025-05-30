@@ -44,14 +44,13 @@ use std::{
     cmp::{max, min},
     ops::Sub,
     sync::atomic::{AtomicBool, AtomicU64, Ordering},
-    time::SystemTime
 };
 use tokio::{task::JoinHandle, time};
 
-const MAX_TXN_BATCH_SIZE: usize = 10000; // Max transactions per account in mempool
+const MAX_TXN_BATCH_SIZE: usize = 100; // Max transactions per account in mempool
                                        // Please make 'MAX_CHILD_VASP_NUM' consistency with 'MAX_CHILD_ACCOUNTS' constant under VASP.move
-const MAX_CHILD_VASP_NUM: usize = 262144;
-const MAX_VASP_ACCOUNT_NUM: usize = 64;
+const MAX_CHILD_VASP_NUM: usize = 65536;
+const MAX_VASP_ACCOUNT_NUM: usize = 16;
 const DD_KEY: &str = "dd.key";
 
 #[derive(Debug)]
@@ -310,7 +309,6 @@ impl TxEmitter {
                 workers.push(Worker { join_handle });
             }
         }
-        info!("Current accounts len is :{:?}",self.accounts.len());
         info!("Tx emitter workers started");
         Ok(EmitJob {
             workers,
@@ -440,7 +438,7 @@ impl TxEmitter {
             let seed_accounts = create_seed_accounts(
                 &mut account,
                 seed_account_num,
-                10000,
+                100,
                 self.pick_mint_client(instances),
                 self.chain_id,
             )
@@ -494,7 +492,7 @@ impl TxEmitter {
             &mut faucet_account,
             &seed_accounts,
             coins_per_seed_account as u64,
-            10000,
+            100,
             self.pick_mint_client(&req.instances),
             self.chain_id,
         )
@@ -567,7 +565,6 @@ impl TxEmitter {
             let stats = self.peek_job_stats(job);
             let delta = &stats - &prev_stats.unwrap_or_default();
             prev_stats = Some(stats);
-            // info!("the account sequence is {:?}",self.accounts.len());
             info!("{}", delta.rate(window));
         }
     }
@@ -590,7 +587,6 @@ impl TxEmitter {
         interval_secs: u64,
     ) -> Result<TxStats> {
         let job = self.start_job(emit_job_request).await?;
-        info!("the current len of accounts is {:?}",self.accounts.len());
         self.periodic_stat(&job, duration, interval_secs).await;
         let stats = self.stop_job(job).await;
         Ok(stats)
@@ -698,11 +694,10 @@ impl SubmissionWorker {
                 tx_offset_time += (cur_time - start_time).as_millis() as u64;
                 self.stats.submitted.fetch_add(1, Ordering::Relaxed);
                 let resp = self.client.submit(&request).await;
-                // if let Err(e) = resp {
-                //     warn!("[{:?}] Failed to submit request: {:?}", self.client, e);
-                // }
+                if let Err(e) = resp {
+                    warn!("[{:?}] Failed to submit request: {:?}", self.client, e);
+                }
             }
-            info!("Time is {:?}, The sequence number now is {}",SystemTime::now(),self.accounts[0].sequence_number());
             if self.params.wait_committed {
                 if let Err(uncommitted) =
                     wait_for_accounts_sequence(&self.client, &mut self.accounts).await
@@ -768,14 +763,8 @@ impl SubmissionWorker {
         } else {
             0
         };
-        // let mut num_valid_tx = accounts.len() - invalid_size;
-        let mut num_valid_tx = 1200;
-        while num_valid_tx > 0{
-            let tmp_accounts = self
-            .accounts
-            .iter_mut()
-            .choose_multiple(&mut rng, batch_size);
-        for sender in tmp_accounts {
+        let mut num_valid_tx = accounts.len() - invalid_size;
+        for sender in accounts {
             let receiver = self
                 .all_addresses
                 .choose(&mut rng)
@@ -790,7 +779,6 @@ impl SubmissionWorker {
                 let request = invalid_tx(sender, receiver, self.chain_id, gas_price, &requests);
                 requests.push(request);
             }
-        }
         }
 
         requests
@@ -813,7 +801,6 @@ async fn wait_for_accounts_sequence(
                 time::sleep(Duration::from_millis(300)).await;
             }
             Ok(sequence_numbers) => {
-                // info!("!!!The sequence number is:{:?}",sequence_numbers[0]);
                 if is_sequence_equal(accounts, &sequence_numbers) {
                     break;
                 }
@@ -874,7 +861,7 @@ async fn query_sequence_numbers(
     Ok(result)
 }
 
-const TXN_EXPIRATION_SECONDS: i64 = 3600;
+const TXN_EXPIRATION_SECONDS: i64 = 150;
 const TXN_MAX_WAIT: Duration = Duration::from_secs(TXN_EXPIRATION_SECONDS as u64 + 30);
 const MAX_TXNS: u64 = 1_000_000;
 const SEND_AMOUNT: u64 = 1;

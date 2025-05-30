@@ -14,8 +14,8 @@ source "$HOME/.cargo/env"
 
 SCRIPT_PATH="$(dirname $0)"
 
-RELEASE="x86_64-unknown-linux-gnu/debug"
-FLAGS="-Zbuild-std --target x86_64-unknown-linux-gnu"
+RELEASE="debug"
+FLAGS=""
 
 while [[ ! -z "$1" ]]; do
 	case "$1" in
@@ -35,7 +35,6 @@ done
 
 echo "Building and running swarm in $RELEASE mode with the following flags: $FLAGS"
 
-# cargo build -p diem-node $FLAGS
+cargo build -p diem-node $FLAGS
 cargo build -p cli $FLAGS
-cargo run -p diem-swarm -- -s --fuzzer-node /Users/edy/workspace/osp/LOKI/src/diem_fuzz/target/debug/diem-node --diem-node /Users/edy/workspace/osp/LOKI/src/diem_fuzz/target/debug/diem-node --cli-path /Users/edy/workspace/osp/LOKI/src/diem_fuzz/target/debug/cli -n 4 -t 0 -c /Users/edy/workspace/osp/LOKI/src/diem_fuzz/tmp "$@"
-
+cargo run -p diem-swarm -- -s --fuzzer-node $SCRIPT_PATH/../../target/debug/diem-node --diem-node $SCRIPT_PATH/../../target/debug/diem-node --cli-path $SCRIPT_PATH/../../target/debug/cli -n 4 -t 1 -c /Users/edy/workspace/osp/LOKI/src/diem_fuzz/tmp "$@"

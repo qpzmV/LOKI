@@ -2428,7 +2428,6 @@ name = "diem-swarm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "consensus",
  "ctrlc",
  "debug-interface",
  "diem-config",
