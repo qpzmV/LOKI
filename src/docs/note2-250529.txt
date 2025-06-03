@@ -1050,4 +1050,6 @@ cargo run -p diem-swarm -- -s --fuzzer-node /Users/edy/workspace/osp/LOKI/src/di
 ps aux | grep diem-node | grep -v grep | awk '{print $2}' | xargs kill -9
 
 ps aux | grep diem-swarm | grep -v grep | awk '{print $2}' | xargs kill -9
+cargo run -p diem-swarm -- -s --diem-node /data/diem/target/debug/diem-node --cli-path /Users/edy/workspace/osp/LOKI/src/diem_fuzz/target/debug/cli -n 4 -t 0 -c /Users/edy/workspace/osp/LOKI/src/diem_fuzz/tmp
+./target/debug/diem-swarm --diem-node ./target/debug/diem-node -n 4 -c /Users/edy/workspace/osp/LOKI/src/diem_fuzz/tmp
 
